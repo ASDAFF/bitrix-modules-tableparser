@@ -4,31 +4,39 @@ class tableParser {
 
     private $parserObj;
 
-    function __construct($file) { 
-        if(is_array($file)) { 
-            $path_parts = pathinfo($file["name"]);
-            $ext = strtolower($path_parts['extension']);  
-            $fileName = $file["tmp_name"]; 
-        } else {
-            $path_parts = pathinfo($file);
-            $ext = strtolower($path_parts['extension']);  
-            $fileName = $file;
+    private function getFileNameAndExt($file) {
+        if(!$file) {
+            return false;
         }
-        switch ($ext) {
-            case 'csv':  
-                include_once 'parsers/csv/include.php';
-                $this->parserObj = new csvTableParser($fileName);
-                break;
-            default:
-                return false;
-                break;
+        if(is_array($file)) { 
+            $path_parts = pathinfo($file["name"]); 
+            $ext = $path_parts['extension'];  
+            $fileName = $file["tmp_name"];
+        } else {
+            $path_parts = pathinfo($file); 
+            $ext = $path_parts['extension'];  
+            $fileName = $file;
+        } 
+        $ext = strtolower($ext);
+        return array($fileName, $ext);
+    }
+    
+    function __construct($file) { 
+        if($file) {
+            list($fileName, $ext) = $this->getFileNameAndExt($file);  
+            if(in_array($ext, array('csv'))) {
+                 include_once 'parsers/' . $ext . '/include.php';
+                 $this->parserObj = new csvTableParser($fileName);  
+            } 
+        } else {
+            $this->parserObj = new allTableParser(); 
         }
         $this->parserObj->read(); 
     }
 
-    function __call($name, $arguments) {
-        if(method_exists($this->parserObj, $name)) {
-            return $this->parserObj->$name($arguments);
+    function __call($name, $arguments) { 
+        if(method_exists($this->parserObj, $name)) { 
+            return $this->parserObj->$name($arguments[0], $arguments[1]); 
         }
     }
 
@@ -42,7 +50,7 @@ abstract class abstractParser {
     protected $parsed = false;
     static $cnt;
 
-    function __construct($file) { 
+    function __construct($file) {   
         $this->filename = $file;
         self::$cnt++;
         $this->tablename = COption::GetOptionString('tableparser', 'tableprefix', 'parser_');
@@ -52,7 +60,11 @@ abstract class abstractParser {
         $DB->Query("CREATE TABLE `{$this->tablename}` ( "
                  . "   `ID` int(11) NOT NULL AUTO_INCREMENT,"
                  . "   `DATA` text NOT NULL, PRIMARY KEY (`ID`)"
-                 . ") ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;"); 
+                 . ") ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;");  
+    }
+
+    public function init($table) { 
+        $this->tablename = $table;
     }
 
     public function getTableName() {
@@ -93,6 +105,22 @@ abstract class abstractParser {
         } else {
             return false;
         }
+    }
+
+}
+
+/*
+    Класс для чтения с таблиц
+    он ничего сам не читает с файлов при создании
+ */
+class allTableParser extends abstractParser {
+
+    function __construct() {
+        return false;
+    }
+
+    function read() {
+        return false;   
     }
 
 }
