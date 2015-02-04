@@ -28,6 +28,7 @@ class tableparser extends CModule {
 
     function DoInstall() {
         RegisterModule($this->MODULE_ID);
+        COption::SetOptionString('tableparser', 'tableprefix', 'parser_');
     }
 
     function DoUninstall() {

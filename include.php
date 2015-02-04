@@ -2,33 +2,47 @@
 
 class tableParser {
 
+    private $parserObj;
+
     function __construct($file) { 
-        $info = new SplFileInfo($file);
-        $ext = strtolower($info->getExtension()); 
+        if(is_array($file)) { 
+            $path_parts = pathinfo($file["name"]);
+            $ext = strtolower($path_parts['extension']);  
+            $fileName = $file["tmp_name"]; 
+        } else {
+            $path_parts = pathinfo($file);
+            $ext = strtolower($path_parts['extension']);  
+            $fileName = $file;
+        }
         switch ($ext) {
-            case 'csv': 
+            case 'csv':  
                 include_once 'parsers/csv/include.php';
-                $parser = new csvTableParser($file);
-                break;       
+                $this->parserObj = new csvTableParser($fileName);
+                break;
             default:
                 return false;
                 break;
-        } 
-        $parser->read();
-        return $parser;
+        }
+        $this->parserObj->read(); 
+    }
+
+    function __call($name, $arguments) {
+        if(method_exists($this->parserObj, $name)) {
+            return $this->parserObj->$name($arguments);
+        }
     }
 
 }
 
 abstract class abstractParser {
-    
-    private $lastRow;
+
+    protected $lastRow;
     protected $tablename;
-    private $filename;
-    private $parsed = false;
+    protected $filename;
+    protected $parsed = false;
     static $cnt;
 
-    function __construct($file) {
+    function __construct($file) { 
         $this->filename = $file;
         self::$cnt++;
         $this->tablename = COption::GetOptionString('tableparser', 'tableprefix', 'parser_');
@@ -36,9 +50,9 @@ abstract class abstractParser {
         global $DB;
         $DB->Query("DROP TABLE IF EXISTS `{$this->tablename}`");
         $DB->Query("CREATE TABLE `{$this->tablename}` ( "
-                 . "   `ID` int(11) NOT NULL AUTO_INCREMENT, "
-                 . "   `DATA` text NOT NULL, PRIMARY KEY (`ID`) "
-                 . ") ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1; "); 
+                 . "   `ID` int(11) NOT NULL AUTO_INCREMENT,"
+                 . "   `DATA` text NOT NULL, PRIMARY KEY (`ID`)"
+                 . ") ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;"); 
     }
 
     public function getTableName() {
@@ -51,7 +65,7 @@ abstract class abstractParser {
     }
 
     abstract function read();
-    
+
     protected function write($arr) {
         global $DB;
         $data = serialize($arr); 
@@ -68,8 +82,8 @@ abstract class abstractParser {
         if(!$this->lastRow) {
             $this->lastRow = 0;
         }
-        $result = $DB->Query("SELECT FROM `{$this->tablename}` "
-                           . "WHERE ID > {$this->lastRow} "
+        $result = $DB->Query("SELECT `DATA` FROM `{$this->tablename}` "
+                           . "WHERE `ID` > {$this->lastRow} "
                            . "ORDER BY `ID` ASC "
                            . "LIMIT 1");
         if($row = $result->Fetch()) {
