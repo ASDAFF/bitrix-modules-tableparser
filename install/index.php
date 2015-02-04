@@ -22,9 +22,8 @@ class tableparser extends CModule {
             $this->MODULE_VERSION_DATE = $arModuleVersion["VERSION_DATE"];
         }
         $this->MODULE_NAME = 'Парсеры прайсов';
-        $this->MODULE_DESCRIPTION = '';
+        $this->MODULE_DESCRIPTION = 'Актуальную версию всегда можно забрать с <a href="http://github.com/kudin/bitrix-modules-tableparser">http://github.com/kudin/bitrix-modules-tableparser</a>';
     }
- 
 
     function DoInstall() {
         RegisterModule($this->MODULE_ID);
