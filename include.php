@@ -24,14 +24,15 @@ class tableParser {
     function __construct($file) { 
         if($file) {
             list($fileName, $ext) = $this->getFileNameAndExt($file);  
-            if(in_array($ext, array('csv'))) {
+            if(in_array($ext, array('csv', 'txt'))) {
                  include_once 'parsers/' . $ext . '/include.php';
-                 $this->parserObj = new csvTableParser($fileName);  
-            } 
+                 $className = $ext . 'TableParser';
+                 $this->parserObj = new $className($fileName);  
+                 $this->parserObj->read();
+            }
         } else {
             $this->parserObj = new allTableParser(); 
-        }
-        $this->parserObj->read(); 
+        } 
     }
 
     function __call($name, $arguments) { 
@@ -41,6 +42,12 @@ class tableParser {
     }
 
 }
+
+/*
+    Парсеры всех типов файлов наследуются от этого класса
+    чтобы всё зафурыкало нужно переопределить метод read(), в котором
+    передать в цикле методу write($arr) каждую строку таблицы
+ */
 
 abstract class abstractParser {
 
@@ -112,7 +119,7 @@ abstract class abstractParser {
 /*
     Класс для чтения с таблиц
     он ничего сам не читает с файлов при создании
- */
+*/
 class allTableParser extends abstractParser {
 
     function __construct() {

@@ -1,9 +1,10 @@
-# bitrix-modules-tableparser
-Парсеры прайсов
-
-
+Установка:
+<pre>
+cd site/bitrix/modules/ 
+git clone https://github.com/kudin/bitrix-modules-tableparser tableparser 
+</pre>
 Пример работы:
-<pre>   
+<pre>
     if($_FILES['file']["size"]) { 
         CModule::IncludeModule('tableParser'); 
         $parser = new tableParser($_FILES['file']); 
