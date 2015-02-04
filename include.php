@@ -12,11 +12,16 @@ class tableParser {
             $path_parts = pathinfo($file["name"]); 
             $ext = $path_parts['extension'];  
             $fileName = $file["tmp_name"];
-        } else {
+        } elseif(file_exists($file)) { 
             $path_parts = pathinfo($file); 
             $ext = $path_parts['extension'];  
             $fileName = $file;
-        } 
+        } else { 
+            $path_parts = pathinfo($file);
+            $fileName = ini_get('upload_tmp_dir') . '/' . $path_parts["basename"];
+            file_put_contents($fileName, file_get_contents($file));
+            $ext = $path_parts['extension'];
+        }
         $ext = strtolower($ext);
         return array($fileName, $ext);
     }
@@ -30,9 +35,10 @@ class tableParser {
                  $this->parserObj = new $className($fileName);  
                  $this->parserObj->read();
             }
-        } else {
-            $this->parserObj = new allTableParser(); 
-        } 
+        }
+        if(!is_object($this->parserObj)) {
+            $this->parserObj = new allTableParser();
+        }
     }
 
     function __call($name, $arguments) { 
