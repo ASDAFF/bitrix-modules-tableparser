@@ -61,6 +61,7 @@ abstract class abstractParser {
     protected $tablename;
     protected $filename;
     protected $parsed = false;
+    protected $firstRow;
     static $cnt;
 
     function __construct($file) {   
@@ -98,8 +99,24 @@ abstract class abstractParser {
                  . "VALUES (NULL, '".$DB->ForSql($data)."');");
     }
 
-    public function GetNext() {
-        return $this->Fetch();
+    public function GetNext() { 
+        if(!$this->lastRow) {
+            $this->lastRow = 1;
+        }
+        if(!$this->firstRow) {
+            global $DB;
+            $result = $DB->Query("SELECT `DATA` FROM `{$this->tablename}` WHERE `ID` = 1");
+            if($row = $result->Fetch()) {
+                $this->firstRow = unserialize($row['DATA']);
+            } else {
+                return false;
+            }
+        }  
+        if($arr = $this->Fetch()) {  
+            return array_combine($this->firstRow, $arr); 
+        } else {
+            return false;
+        }  
     }
 
     public function Fetch() {

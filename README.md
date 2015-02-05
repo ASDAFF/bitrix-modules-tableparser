@@ -8,7 +8,7 @@ git clone https://github.com/kudin/bitrix-modules-tableparser tableparser
     if($_FILES['file']["size"]) { 
         CModule::IncludeModule('tableParser'); 
         $parser = new tableParser($_FILES['file']); 
-        while($row = $parser->Fetch()) { 
+        while($row = $parser->Fetch()) { // или $parser->GetNext(); вытянет с ключами соотв. 1 строке
             var_dump($row);
         }
     }  
@@ -20,3 +20,4 @@ git clone https://github.com/kudin/bitrix-modules-tableparser tableparser
     $parser = new tableParser();
     $parser->init($name);   
 </pre>
+ 
