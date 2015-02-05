@@ -4,31 +4,43 @@ class tableParser {
 
     private $parserObj;
 
-    private function getFileNameAndExt($file) {
-        if(!$file) {
-            return false;
-        }
-        if(is_array($file)) { 
-            $path_parts = pathinfo($file["name"]); 
-            $ext = $path_parts['extension'];  
-            $fileName = $file["tmp_name"];
-        } elseif(file_exists($file)) { 
-            $path_parts = pathinfo($file); 
-            $ext = $path_parts['extension'];  
-            $fileName = $file;
-        } else { 
-            $path_parts = pathinfo($file);
-            $fileName = ini_get('upload_tmp_dir') . '/' . $path_parts["basename"];
-            file_put_contents($fileName, file_get_contents($file));
-            $ext = $path_parts['extension'];
+    private function getFileInfo($file) {
+        switch (true) {
+            case !$file:
+                return false;
+                break;
+            case is_array($file):
+                $path_parts = pathinfo($file["name"]);
+                $ext = $path_parts['extension'];
+                $fileName = $file["tmp_name"];
+                break;
+            case file_exists($file):
+                $path_parts = pathinfo($file);
+                $ext = $path_parts['extension'];
+                $fileName = $file;
+                break;
+            case is_numeric($file):
+                $file_info = CFile::GetFileArray($file);
+                if (is_array($file_info)) {
+                    return $this->getFileInfo($_SERVER['DOCUMENT_ROOT'] . $file_info['SRC']);
+                }
+                break;
+            default:
+                $path_parts = pathinfo($file);
+                $fileName = ini_get('upload_tmp_dir') . '/' . $path_parts["basename"];
+                file_put_contents($fileName, file_get_contents($file));
+                return $this->getFileInfo($fileName);
+                break;
         }
         $ext = strtolower($ext);
-        return array($fileName, $ext);
+        return array('FILE_NAME' => $fileName, 'EXT' => $ext);
     }
-    
+
     function __construct($file) { 
-        if($file) {
-            list($fileName, $ext) = $this->getFileNameAndExt($file);  
+        if($file) { 
+            $fileinfo = $this->getFileInfo($file);  
+            $fileName = $fileinfo['FILE_NAME'];
+            $ext = $fileinfo['EXT'];
             if(in_array($ext, array('csv', 'txt'))) {
                  include_once 'parsers/' . $ext . '/include.php';
                  $className = $ext . 'TableParser';
@@ -111,14 +123,14 @@ abstract class abstractParser {
             } else {
                 return false;
             }
-        }  
+        }
         if($arr = $this->Fetch()) {  
             return array_combine($this->firstRow, $arr); 
         } else {
             return false;
         }  
-    }
-
+    } 
+    
     public function Fetch() {
         global $DB;
         if(!$this->lastRow) {
